@@ -1,5 +1,11 @@
 -- 한 줄 주석
 /* 범위 주석 */
+---------------------------------------
+-- DML : 데이터베이스 내의 데이터를 조작 --
+---------------------------------------
+------------
+-- SELECT --
+------------
 select 
     * -- 테이블에서 가져올 것 / * : 모든 컬럼
 from 
@@ -725,4 +731,366 @@ select max(sal) from emp group by deptno;
 
 select * from emp 
 where sal in (select max(sal) from emp group by deptno);
+
+
+select * from emp
+where deptno = 10;
+
+select * 
+from (select * from emp where deptno = 10);
+
+-- rownum : 줄번호
+-- select가 where보다 늦게 동작, from 이후 where가 동장하기 때문에 rownum 조건 불가
+-- order by가 가장 늦게 동작하기 때문에 select 된 이후 정렬이 되어 rownum이 이미 붙은 상태에서 정렬
+select rownum, emp.* 
+from emp
+--where rownum = 4;
+order by ename;
+
+-- select 한 후 조건을 주고 싶을 때
+-- 이미 select 된 것(새로 만든 table)을 from으로 줌
+select rownum, e.* 
+from (select * from emp order by ename) e;
+
+-- group by 에서 having 안 쓸 수 있음
+select job, count(*) from emp 
+group by job
+having count(*) >= 3;
+
+-- 컬럼에 별칭을 지어야 바깥 select에서 조건을 이용할 수 있음
+-- count(*)를 where에 쓰면 count 기능이 작동하기에 오류, 그렇기에 별칭 필요
+select *
+from (select job, count(*) as cnt from emp group by job) 
+where cnt >= 3;
+
+-- with : 만든 테이블을 별칭으로 관리(변수에 저장하는 느낌)
+with 
+    e10 as (select * from emp where deptno = 10)
+select * from e10;
+
+
+-- 262p Q1
+select job from emp where ename = 'ALLEN';
+
+select job, empno, ename, sal, deptno, dname 
+from emp 
+join dept using (deptno)
+where job = (select job from emp where ename = 'ALLEN')
+order by sal desc, ename;
+
+-- 262p Q2
+select avg(sal) from emp;
+
+select empno, ename, dname, hiredate, loc, sal, grade 
+from emp e
+join dept d using (deptno) 
+left outer join salgrade s on (e.sal >= s.losal and e.sal <= s.hisal)
+where e.sal > (select avg(sal) from emp)
+order by sal desc, empno;
+
+-- 262p Q3
+select job from emp where deptno = 30;
+
+select empno, ename, job, deptno, dname, loc 
+from emp join dept using (deptno)
+where deptno = 10 and (job not in (select job from emp where deptno = 30)); 
+
+
+-- 262p Q4
+select max(sal) from emp where job = 'SALESMAN';
+
+select empno, ename, sal, grade 
+from 
+    emp e 
+    left outer join salgrade s on (e.sal >= s.losal and e.sal <= s.hisal)
+where sal > (select max(sal) from emp where job = 'SALESMAN')
+order by empno;
+
+
+------------------------------------------
+-- DDL : 데이터베이스의 구조를 정의 및 관리 --
+------------------------------------------
+-- DDL : 자동으로 commit이 됨
+------------
+-- CREATE -- 
+------------
+-- create : 데이블 생성
+create table emp_ddl (
+-- 컬럼명   자료형 ( 데이터 길이 )
+    empno    number(4), -- empno 컬럼은 숫자 4자리만 들어올 수 있다 
+    ename    varchar(10), -- 10바이트 길이의 문자만 들어올 수 있다
+    job      varchar2(9),
+    mgr      number(4),
+    hiredate date,
+    sal      number(7,2), -- ,2 : 소수점 둘째자리까지 
+    comm     number(7,2),
+    deptno   number(2)
+);
+
+select * from emp_ddl;
+desc emp_ddl;
+
+-- 테이블 복사 --
+-- 복사하고 싶은 컬럼 선택 가능, where 등 사용 가능
+create table dept_ddl 
+    as select * from dept;
+
+select * from dept_ddl;
+
+
+create table emp_ddl_30
+    as select empno, ename, sal from emp where deptno = 30;
+    
+select * from emp_ddl_30;
+
+
+-----------
+-- ALTER --
+-----------
+create table emp_alter
+    as select * from emp;
+
+-- add : 테이블에 컬럼 추가
+alter table emp_alter
+    add hp varchar2(20);
+
+-- rename : 컬럼 이름 변경하기
+alter table emp_alter
+    -- hp column을 tel column으로 변경
+    rename column hp to tel;
+    
+-- modify : 자료형 변경, 단 크기가 줄어드는 건 불가능
+desc emp_alter;
+alter table emp_alter
+    modify empno number(5);
+-- 크기가 5였다가 4가 될 수 없음 => 오류
+alter table emp_alter
+    modify empno number(4);
+-- 다시 크기 줄이기!
+-- 새로운 컬럼 만들어서 거기에 내용을 복붙하고 사이즈 변경 후 기존 내용 가져온 뒤 새로운 컬럼 삭제
+
+-- drop : 컬럼 삭제하기, 컬럼 안에 내용도 삭제됨, 되돌리기 없음....
+alter table emp_alter
+    drop column tel;
+
+alter table emp_alter
+    drop column comm;
+
+select * from emp_alter;
+
+-- TABLE 조작 --
+-- rename : 테이블 이름 변경, 거의 안 씀
+rename emp_alter to emp_rename;
+
+-- truncate : 주위해서 쓰기, 테이블의 내용 삭제, 되돌리기 불가능
+truncate table emp_rename;
+
+
+----------
+-- DROP --
+----------
+-- drop : 테이블 삭제, 되돌리기 불가능, alter 안에서도 사용 가능
+drop table emp_rename;
+
+select * from emp_rename;
+
+-- DATE 조작 --
+create table dept_temp
+    as select * from dept;
+    
+---------
+-- DML --
+---------
+------------
+-- insert --
+------------
+-- insert : 행 추가
+-- insert into 테이블명 (culumn명) values (해당 culumn에 추가할 데이터)
+-- 여러번 실행하면 같은 값이라도 여러번 들어감
+insert into dept_temp (deptno, dname, loc)
+    values (50, 'DATABASE', 'SEOUL');
+-- 테이블명 뒤에 괄호가 없다면 모든 culumn, 조회된 순서대로 쓰기
+insert into dept_temp
+    values (60, 'NETWORK', 'BUSAN');
+    
+-- null 입력 --
+insert into dept_temp
+    values (70, 'WEB', null);
+-- '' : null로 인식하지만 다른 언어에서 봤을 때 null로 인식하지 않을 가능성 높음
+-- null이라고 써주는게 제일 좋음
+insert into dept_temp
+    values (80, 'MOBILE', '');
+-- null을 암시적으로 입력하기
+insert into dept_temp (deptno, loc)
+    values (90, 'INCHEON');
+
+select * from dept_temp;
+
+-- 날짜 데이터 입력 --
+create table emp_temp
+    as select * from emp;
+    
+-- yyyy/mm/dd 형식 : 자동으로 date 형태로 인식할 가능성 높음
+insert into emp_temp (empno, ename, job, mgr, hiredate, sal, comm, deptno)
+    values (9999, '홍길동', 'PRESIDENT', null, '2001/01/01', 5000, 1000, 10); 
+    
+-- yyyy-mm-dd 형식 : 자동으로 date 형태로 인식할 가능성 높음
+insert into emp_temp (empno, ename, job, mgr, hiredate, sal, comm, deptno)
+    values (1111, '성춘향', 'MANAGER', 9999, '2001-01-05', 4000, null, 20); 
+    
+-- to_date 사용
+insert into emp_temp (empno, ename, job, mgr, hiredate, sal, comm, deptno)
+    values (2111, '이순신', 'MANAGER', 9999, to_date('07-01-01', 'dd/mm/yy'), 4000, null, 20); 
+    
+-- sysdate : 현재 날짜
+insert into emp_temp (empno, ename, job, mgr, hiredate, sal, comm, deptno)
+    values (3111, '심청이', 'MANAGER', 9999, sysdate, 4000, null, 30); 
+
+-- 서브쿼리 사용하여 삽입하기, 거의 안 씀
+insert into emp_temp 
+    select * from emp where deptno = 10;
+
+select * from emp_temp;
+
+
+------------
+-- UPDATE -- 
+------------
+create table dept_temp2
+    as select * from dept;
+
+-- update : 데이터 수정하기
+-- where 조건이 없다면 모든 것을 수정
+update dept_temp2
+    set loc = 'SEOUL';
+    
+-- rollback : 마지막 저장 지점으로 되돌려줌
+rollback;
+
+-- where로 조건을 주어 해당 조건에 해당 되는 것만 데이터가 수정됨
+update dept_temp2
+    set loc = 'SEOUL',
+        dname = 'DATABASE'
+    where deptno = 40;
+    
+-- update 주의할 점!!
+-- update의 where 조건을 select로 출력해서 정확한지 확인하고 복붙하기
+
+select * from dept_temp2;
+
+-- sal이 1000 이하인 사원의 급여를 3% 인상
+select * from emp_temp2
+where sal <= 1000;
+
+update emp_temp2
+    set sal = sal * 1.03
+    where sal <= 1000;
+
+select sal from emp_temp2 where sal <= 1000;
+
+------------
+-- DELETE --
+------------
+create table emp_temp2
+    as select * from emp;
+
+select * from emp_temp2
+where job = 'MANAGER';
+
+-- delete : where 조건에 맞게 삭제하기
+delete emp_temp2
+where job = 'MANAGER';
+
+delete emp_temp2;
+
+rollback;
+
+select * from emp_temp2;
+
+
+-- 1번
+-- substr을 사용하여 empno의 앞 2자리 자르고
+-- rpad로 나머지 자리를 *로 채우기
+select 
+    -- empno,
+    rpad(substr(empno, 1, 2), length(empno), '*') as empno, 
+    ename 
+from emp
+order by empno desc;
+
+-- 2번
+select * from emp;
+select * from dept;
+-- deptno으로 연결 가능 => 같은 컬럼명 => using 사용하여 deptno열 기준으로 join하기
+select 
+    e.empno, e.ename, d.dname, d.loc
+from emp e
+    join dept d using (deptno)
+order by dname desc;
+
+
+select * from dict;
+select * from user_tables;
+
+-- index -> 중요! --
+-- 오름차순과 내림차순을 따로 관리
+create index idx_emp_sal
+    on emp(sal);
+    
+select * from user_indexes;
+
+drop index idx_emp_sal;
+
+-- index를 꼭 쓰게끔 하는 방법
+-- => 강제 hint : /*+ index(인덱스명)*/
+select /*+ index(idx_emp_sal) */
+* from emp  e
+order by sal;
+
+-- plan을 보는 방법! --
+-- sql developer에서는 상단 3번째 아이콘 '계획설명' 클릭
+
+
+-- sequence -> 중요! --
+-- sequence : for문의 증감식 느낌
+select max(empno)+1 from emp_temp2;
+
+insert into emp_temp2 
+        (empno, 
+        ename)
+    values 
+        ((select max(empno)+1 from emp_temp2),
+        '신입2');
+
+select * from emp_temp2;
+
+-- sequence 만들자~ -- 
+create table tb_user (
+    user_id   number,
+    user_name varchar2(30)
+);
+select * from tb_user;
+
+-- sequence 생성
+create sequence seq_user;
+
+-- nextval : 실행할 때마다 값 +1
+select seq_user.nextval from dual;
+-- currval : 현재 값
+select seq_user.currval from dual;
+
+insert into tb_user (user_id, user_name)
+    values (seq_user.nextval, '유저명1');
+
+insert into tb_user (user_id, user_name)
+    values (seq_user.nextval, '유저명2');
+
+insert into tb_user (user_id, user_name)
+    values (seq_user.nextval, '유저명3');
+    
+select * from tb_user;
+
+
+
+
 
