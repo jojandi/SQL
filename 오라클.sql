@@ -1091,6 +1091,128 @@ insert into tb_user (user_id, user_name)
 select * from tb_user;
 
 
+create sequence seq_test
+    start with 10000    -- 시작 숫자 (기본값 1)
+    increment by 100;   -- 증감 숫자 (기본값 1)
+    
+-- nextval을 한 번도 사용하지 않은 경우, currval 사용 못 함
+select seq_test.currval from dual;
+select seq_test.nextval from dual;
 
 
+-- not null : null을 허용하지 않겠다
 
+-- primary key(PK) --
+-- unique + not null => 중복된 값과 null을 허용하지 않는다, 
+-- 생성과 동시에 index 생성해줌, 
+-- create tanle에서는 PK를 딱 하나만 지정 => 2개 이상의 컬럼을 PK로 지정하려면 alter 사용
+create table table_pk (
+    LOGIN_ID  varchar2(20) primary key,
+    LOGIN_PWD varchar2(20) not null,
+    TEL       varchar2(20)
+);
+-- user_constraints : 내가 만든 제약조건을 보여줌
+select * from user_constraints
+where table_name = 'TABLE_PK';
+-- user_indexes : 내가 만든 인덱스를 보여줌
+select * from user_indexes;
+
+select * from table_pk;
+
+
+create table table_pk2 (
+    LOGIN_ID  varchar2(20) constraint pk_table_pk2 primary key,
+    LOGIN_PWD varchar2(20) constraint nn_table_pk2 not null,
+    TEL       varchar2(20)
+);
+select * from user_constraints
+where table_name = 'TABLE_PK2';
+
+insert into table_pk (login_id, login_pwd, tel)
+    values (null, null, null); -- 오류 - id에 null 넣을 수 없음
+insert into table_pk (login_id, login_pwd, tel)
+    values ('ID', null, null); -- 오류 - pwd에 null 넣을 수 없음
+insert into table_pk (login_id, login_pwd, tel)
+    values ('ID', 'PW', null); -- 두 번 실행 시 오류 - id가 PK이기 때문에 중복값 들어갈 수 없음
+    
+select * from table_pk;
+
+create table table_pk3 (
+    LOGIN_ID  varchar2(20),
+    LOGIN_PWD varchar2(20),
+    TEL       varchar2(20),
+    -- create table할 때 2개 이상의 primary key 만들기
+    -- 아이디와 패스워드의 조합이 같지만 않다면 넣을 수 있음
+    -- => 아이디의 값은 같지만 패스워드의 값이 다르다면 넣을 수 있음
+    primary key (login_id, login_pwd)
+);
+select * from table_pk3;
+
+-- id, pwd의 PK는 하나로 잡혀있음
+select * from user_constraints
+where table_name = 'TABLE_PK3';
+
+insert into table_pk3
+    values ('id1', 'pw1', null);
+insert into table_pk3
+    values ('id1', 'pw2', null); -- 오류 안 남
+    
+    
+-- foreign key(FK) --
+-- 대상이 되는 테이블의 컬럼과 같은 타입으로 지정
+-- 컬럼명은 서로 달라도 관계 없다 (보통은 같게 지정)
+-- 대상이 되는 컬럼은 pk여야한다
+create table dept_fk (
+    deptno1 number primary key,
+    dname   varchar2(14)
+);
+create table emp_fk (
+    empno    number primary key,
+    ename    varchar2(10),
+    -- fk 지정 방법1
+    deptno   number references dept_fk(deptno1) -- 만약 컬럼명이 같다면 '(컬럼명)' 생략 가능
+);
+create table emp_fk2 (
+    empno    number primary key,
+    ename    varchar2(10),
+    -- fk 지정 방법2
+    deptno   number,
+    foreign key(deptno) references dept_fk(deptno1)
+);
+
+insert into dept_fk 
+    values (100, '1 강의실');
+    
+insert into emp_fk 
+    values (1, '이름', 100); -- 오류 - dept_fk의 deptno1에 없는 값을 쓸 수 없음
+    
+update emp_fk
+    set deptno = 101; -- 오류
+update dept_fk
+    set deptno1 = 101; -- 오류 - emp_fk에서 100을 참조하고 있기 때문에 수정, 삭제 불가
+
+-- 참조하는 것(emp_fk)을 지우면 참조 당하는 것(dept_fk) 업데이트 가능
+delete emp_fk;
+update dept_fk
+    set deptno1 = 101;
+    
+-- delete - dml, truncate - ddl => 둘 다 삭제하는 것, 자동 커밋의 유무
+
+select * from dept_fk;
+select * from emp_fk;
+
+-- default --
+-- null일 때 값 지정
+create table table_defaylt (
+    LOGIN_ID  varchar2(20),
+    LOGIN_PWD varchar2(20),
+    TEL       varchar2(20) default '000-0000'
+);
+
+insert into table_defaylt
+    values ('id', 'pw', '123-4567');
+    
+insert into table_defaylt (login_id, login_pwd)
+    values ('id2', 'pw2');
+    
+select * from table_defaylt;

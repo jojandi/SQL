@@ -1,0 +1,37 @@
+-- ` 지우기!!
+-- ctrl + h => ` 바꿔주기
+
+CREATE TABLE EMP (
+	EMPNO	number(4)	NOT NULL,
+	ENAME	varchar2(10)	NULL,
+	JOB	varchar2(9)	NULL,
+	MGR	number(4)	NULL,
+	HIREDATE	date	NULL,
+	SAL	number(7,2)	NULL,
+	COMM	number(7,2)	NULL,
+	DEPTNO	number(2)	NOT NULL
+);
+
+CREATE TABLE DEPT (
+	DEPTNO	number(2)	NOT NULL,
+	DNAME	varchar(14)	NULL,
+	LOC	varchar(13)	NULL
+);
+
+ALTER TABLE EMP ADD CONSTRAINT PK_EMP PRIMARY KEY (
+	EMPNO
+);
+
+ALTER TABLE DEPT ADD CONSTRAINT PK_DEPT PRIMARY KEY (
+	DEPTNO
+);
+
+ALTER TABLE EMP ADD CONSTRAINT FK_DEPT_TO_EMP_1 FOREIGN KEY (
+	DEPTNO
+)
+REFERENCES DEPT (
+	DEPTNO
+);
+
+-- ` 지우기!!
+-- ctrl + h => ` 바꿔주기
