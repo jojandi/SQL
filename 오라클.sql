@@ -1216,3 +1216,138 @@ insert into table_defaylt (login_id, login_pwd)
     values ('id2', 'pw2');
     
 select * from table_defaylt;
+
+
+
+---------
+-- 시험 --
+---------
+CREATE TABLE restaurant (
+	RID	number,
+	Rname	varchar2(100),
+	Raddr	varchar2(100),
+	Rnum	number		
+);
+
+CREATE TABLE menu (
+	MID	number,
+	Mname	varchar2(100),
+	Mprice	number,
+	RID	number		
+);
+
+CREATE TABLE member (
+	MEMID	number,
+	MEMaddr	varchar2(100)		
+);
+
+CREATE TABLE orders (
+	OID	number,
+	Orequ	varchar2(100),
+	Otime	date,
+	DID	number,
+	MEMID	number,
+	RID	number,
+	PID	number		
+);
+
+CREATE TABLE PAY (
+	PID	number,
+	pay	varchar2(100)		
+);
+
+CREATE TABLE isDel (
+	DID	number,
+	isDel	varchar2(100)	
+);
+
+CREATE TABLE memberOrder (
+	OID	number,
+	MID	number		
+);
+
+ALTER TABLE restaurant ADD CONSTRAINT PK_RESTAURANT PRIMARY KEY (
+	RID
+);
+
+ALTER TABLE menu ADD CONSTRAINT PK_MENU PRIMARY KEY (
+	MID
+);
+
+ALTER TABLE member ADD CONSTRAINT PK_MEMBER PRIMARY KEY (
+	MEMID
+);
+
+ALTER TABLE orders ADD CONSTRAINT PK_ORDER PRIMARY KEY (
+	OID
+);
+
+ALTER TABLE PAY ADD CONSTRAINT PK_PAY PRIMARY KEY (
+	PID
+);
+
+ALTER TABLE isDel ADD CONSTRAINT PK_ISDEL PRIMARY KEY (
+	DID
+);
+
+select * from restaurant;
+select * from menu;
+select * from pay;
+select * from isdel;
+select * from member;
+select * from orders;
+select * from memberorder;
+
+insert into restaurant
+    values (1, '달식당', '천안시 대흥동', 0410000000);
+    
+insert into menu
+    values (1, '돈까스', '10000', 1);
+insert into menu
+    values (2, '김밥', '2000', 1);
+insert into menu
+    values (3, '우동', '6000', 1);
+
+insert into pay
+    values (1, '카드결제');
+insert into pay
+    values (2, '현금결제');
+
+insert into isdel
+    values (1, '배달');
+insert into isdel
+    values (2, '포장');
+    
+insert into member
+    values (1, '천안시 대흥동');
+    
+insert into orders
+    values (1, '문 앞에 두고 가주세요. ', '2024/08/07', 1, 1, 1, 1);
+
+insert into memberorder
+    values (1, 1);
+insert into memberorder
+    values (1, 3);
+
+select * from restaurant;
+select * from menu;
+select * from pay;
+select * from isdel;
+select * from member;
+select * from orders;
+select * from memberorder;
+
+select 
+    o.otime 주문일, count(menu.mname) 메뉴명, menu.mprice 가격, p.pay 결제방식, d.isdel 배달여부, mem.memaddr 배달주소, r.rname 가게명
+from orders o
+    join memberorder m using (oid)
+    join menu menu using (mid)
+    join pay p using (pid)
+    join isdel d using (did)
+    join member mem using (memid)
+    left outer join restaurant r on (o.rid = r.rid)
+group by o.otime, menu.mprice, p.pay, d.isdel, mem.memaddr, r.rname;
+    
+select deptno, avg(sal), sum(sal), count(*) from emp
+group by deptno;
+    
