@@ -1329,16 +1329,10 @@ insert into memberorder
 insert into memberorder
     values (1, 3);
 
-select * from restaurant;
-select * from menu;
-select * from pay;
-select * from isdel;
-select * from member;
-select * from orders;
-select * from memberorder;
-
 select 
-    o.otime 주문일, count(menu.mname) 메뉴명, menu.mprice 가격, p.pay 결제방식, d.isdel 배달여부, mem.memaddr 배달주소, r.rname 가게명
+    oid 주문번호, o.otime 주문일, 
+    listagg(menu.mname, ',') within group(order by menu.mname) as 메뉴명, 
+    sum(menu.mprice) as 총가격, p.pay 결제방식, d.isdel 배달여부, mem.memaddr 배달주소, r.rname 가게명
 from orders o
     join memberorder m using (oid)
     join menu menu using (mid)
@@ -1346,8 +1340,5 @@ from orders o
     join isdel d using (did)
     join member mem using (memid)
     left outer join restaurant r on (o.rid = r.rid)
-group by o.otime, menu.mprice, p.pay, d.isdel, mem.memaddr, r.rname;
-    
-select deptno, avg(sal), sum(sal), count(*) from emp
-group by deptno;
-    
+group by oid, o.otime, p.pay, d.isdel, mem.memaddr, r.rname;
+
